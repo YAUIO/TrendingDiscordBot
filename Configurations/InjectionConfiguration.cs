@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TrendingDiscordBot.Modules;
 using TrendingDiscordBot.Services;
 
 namespace TrendingDiscordBot.Configurations;
@@ -11,17 +12,26 @@ public class InjectionConfiguration
 {
     public static async Task<IServiceProvider> CreateProvider()
     {
+        var config = new DiscordSocketConfig
+        {
+            MessageCacheSize = 100,
+            GatewayIntents = GatewayIntents.All
+        };
+
+
         var collection = new ServiceCollection()
-            .AddSingleton(await GetDiscordBot())
+            .AddSingleton(await GetDiscordBot(config))
+            .AddSingleton<ForwardModule>()
             .AddSingleton<CommandService>()
-            .AddSingleton<LoggingService>();
+            .AddSingleton<LoggingService>()
+            .AddSingleton<CommandHandler>();
 
         return collection.BuildServiceProvider();
     }
 
-    private static async Task<DiscordSocketClient> GetDiscordBot()
+    private static async Task<DiscordSocketClient> GetDiscordBot(DiscordSocketConfig cfg)
     {
-        var bot = new DiscordSocketClient();
+        var bot = new DiscordSocketClient(cfg);
         var builder = new ConfigurationBuilder()
             .AddUserSecrets<Program>()
             .Build();

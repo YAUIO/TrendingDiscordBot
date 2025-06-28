@@ -11,8 +11,11 @@ internal class Program
     private static async Task Main(string[] args)
     {
         _serviceProvider = await InjectionConfiguration.CreateProvider();
-        
+
         _serviceProvider.GetRequiredService<LoggingService>();
+
+        var handler = _serviceProvider.GetRequiredService<CommandHandler>();
+        await handler.InstallCommandsAsync();
 
         await Task.Delay(-1);
     }
