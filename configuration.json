@@ -1,4 +1,5 @@
 ﻿{
   "ServerID" : 0,
-  "ForwardChannelID" : 0
+  "ForwardChannelID" : 0,
+  "APIKey" : 0
 }

@@ -34,11 +34,18 @@ public class InjectionConfiguration
     private static async Task<DiscordSocketClient> GetDiscordBot(DiscordSocketConfig cfg)
     {
         var bot = new DiscordSocketClient(cfg);
-        var builder = new ConfigurationBuilder()
+        /*var builder = new ConfigurationBuilder()
             .AddUserSecrets<Program>()
+            .Build();*/
+        
+        //var token = builder["DiscordTestingBotKey"];
+        
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("configuration.json", optional: false, reloadOnChange: true)
             .Build();
-
-        var token = builder["DiscordTestingBotKey"];
+        
+        var token = config["APIKey"];
 
         await bot.LoginAsync(TokenType.Bot, token);
         await bot.StartAsync();
