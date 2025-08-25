@@ -25,7 +25,7 @@ public class ForwardModule
     {
         //Console.WriteLine("Checking message: " + msg.Id + " " + msg.Content + " : " + msg.Reactions.Count);
 
-        Console.WriteLine($"Reactions: {msg.Reactions.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
+        //Console.WriteLine($"Reactions: {msg.Reactions.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
 
         if (msg.Reactions.Count < _threshold) return false;
 
@@ -41,7 +41,7 @@ public class ForwardModule
                 uniqueUsers.Add(user.Id);
         }
 
-        Console.WriteLine($"Users: {uniqueUsers.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
+        //Console.WriteLine($"Users: {uniqueUsers.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
 
         //if (uniqueUsers.Count < _threshold) return false;
 

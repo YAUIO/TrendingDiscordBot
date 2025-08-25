@@ -40,9 +40,7 @@ public class ForwardInterface
             request
         );
 
-        if (response.IsSuccessStatusCode)
-            Console.WriteLine("Message forwarded successfully!");
-        else
+        if (!response.IsSuccessStatusCode)
             Console.WriteLine($"Failed: {response.StatusCode}\n{await response.Content.ReadAsStringAsync()}");
     }
 }
