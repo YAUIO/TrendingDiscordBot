@@ -1,5 +1,7 @@
 ﻿{
-  "ServerID" : 0,
-  "ForwardChannelID" : 0,
-  "APIKey" : 0
+  "ServerID": 0,
+  "ForwardChannelID": 0,
+  "APIKey": 0,
+  "Threshold": 4,
+  "Timeout": 60
 }
