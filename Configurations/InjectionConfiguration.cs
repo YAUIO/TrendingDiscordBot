@@ -16,7 +16,11 @@ public class InjectionConfiguration
         var config = new DiscordSocketConfig
         {
             MessageCacheSize = 100,
-            GatewayIntents = GatewayIntents.All
+            GatewayIntents = GatewayIntents.Guilds
+                             | GatewayIntents.GuildMessages
+                             | GatewayIntents.GuildMessageReactions
+                             | GatewayIntents.GuildMembers
+                             | GatewayIntents.MessageContent
         };
 
 
@@ -26,7 +30,12 @@ public class InjectionConfiguration
             .AddSingleton<CommandService>()
             .AddSingleton<LoggingService>()
             .AddSingleton<CommandHandler>()
-            .AddSingleton<CachedMessagesRepository>();
+            .AddSingleton<CachedMessagesRepository>()
+            .AddSingleton(new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("configuration.json", false, true)
+                .Build()
+            );
 
         return collection.BuildServiceProvider();
     }
@@ -34,17 +43,12 @@ public class InjectionConfiguration
     private static async Task<DiscordSocketClient> GetDiscordBot(DiscordSocketConfig cfg)
     {
         var bot = new DiscordSocketClient(cfg);
-        /*var builder = new ConfigurationBuilder()
-            .AddUserSecrets<Program>()
-            .Build();*/
-        
-        //var token = builder["DiscordTestingBotKey"];
-        
+
         var config = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("configuration.json", optional: false, reloadOnChange: true)
+            .AddJsonFile("configuration.json", false, true)
             .Build();
-        
+
         var token = config["APIKey"];
 
         await bot.LoginAsync(TokenType.Bot, token);
