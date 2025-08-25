@@ -1,15 +1,28 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 
 namespace TrendingDiscordBot.Modules;
 
-public class ForwardModule(
-    DiscordSocketClient client
-)
+public class ForwardModule
 {
     private const int Threshold = 4;
-    private const ulong Channel = 1388552600646848673;
-    private const ulong Server = 1051185027054051378;
+    private readonly ulong _channel;
+    private readonly ulong _server;
+    private readonly DiscordSocketClient _client;
+        
+    public ForwardModule(DiscordSocketClient client)
+    {
+        _client = client;
+        
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("configuration.json", optional: false, reloadOnChange: true)
+            .Build();
+
+        _server = Convert.ToUInt64(config["ServerID"]);
+        _channel = Convert.ToUInt64(config["ForwardChannelID"]);
+    }
 
     public async Task<bool> HandleMessage(SocketMessage msg)
     {
@@ -22,8 +35,7 @@ public class ForwardModule(
         foreach (var reaction in msg.Reactions)
         {
             var emoji = reaction.Key;
-
-            // this returns an async enumerable of users
+            
             var users = await msg.GetReactionUsersAsync(emoji, int.MaxValue).FlattenAsync();
 
             foreach (var user in users)
@@ -32,7 +44,7 @@ public class ForwardModule(
 
         if (uniqueUsers.Count < Threshold) return false;
 
-        if (client.GetChannel(Channel) is IMessageChannel destinationChannel)
+        if (_client.GetChannel(_channel) is IMessageChannel destinationChannel)
         {
             await destinationChannel
                 .SendMessageAsync(
@@ -41,7 +53,7 @@ public class ForwardModule(
                     stickers: msg.Stickers.ToArray<ISticker>()
                 );
             await destinationChannel
-                .SendMessageAsync($"https://discord.com/channels/{Server}/{msg.Channel.Id}/{msg.Id}");
+                .SendMessageAsync($"https://discord.com/channels/{_server}/{msg.Channel.Id}/{msg.Id}");
         }
 
         return true;
