@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TrendingDiscordBot.Modules;
+using TrendingDiscordBot.Repositories;
 using TrendingDiscordBot.Services;
 
 namespace TrendingDiscordBot.Configurations;
@@ -24,7 +25,8 @@ public class InjectionConfiguration
             .AddSingleton<ForwardModule>()
             .AddSingleton<CommandService>()
             .AddSingleton<LoggingService>()
-            .AddSingleton<CommandHandler>();
+            .AddSingleton<CommandHandler>()
+            .AddSingleton<CachedMessagesRepository>();
 
         return collection.BuildServiceProvider();
     }
