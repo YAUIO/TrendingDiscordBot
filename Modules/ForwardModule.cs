@@ -7,23 +7,25 @@ namespace TrendingDiscordBot.Modules;
 public class ForwardModule
 {
     private readonly ulong _channel;
-    private readonly DiscordSocketClient _client;
+    private readonly ForwardInterface _forwarder;
     private readonly ulong _server;
     private readonly int _threshold;
 
-    public ForwardModule(DiscordSocketClient client, IConfigurationRoot config)
+    public ForwardModule(IConfigurationRoot config, ForwardInterface forwarder)
     {
-        _client = client;
         _server = Convert.ToUInt64(config["ServerID"]);
         _channel = Convert.ToUInt64(config["ForwardChannelID"]);
         _threshold = Convert.ToInt32(config["Threshold"]);
-        
+        _forwarder = forwarder;
+
         Console.WriteLine($"ForwardModule initalized with threshold: {_threshold}");
     }
 
     public async Task<bool> HandleMessage(SocketMessage msg)
     {
         //Console.WriteLine("Checking message: " + msg.Id + " " + msg.Content + " : " + msg.Reactions.Count);
+
+        Console.WriteLine($"Reactions: {msg.Reactions.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
 
         if (msg.Reactions.Count < _threshold) return false;
 
@@ -39,19 +41,12 @@ public class ForwardModule
                 uniqueUsers.Add(user.Id);
         }
 
-        if (uniqueUsers.Count < _threshold) return false;
+        Console.WriteLine($"Users: {uniqueUsers.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
 
-        if (_client.GetChannel(_channel) is IMessageChannel destinationChannel)
-        {
-            await destinationChannel
-                .SendMessageAsync(
-                    $"{msg.Author.Username}({msg.Author.GlobalName}): {msg.Content}",
-                    embeds: msg.Embeds.ToArray(),
-                    stickers: msg.Stickers.ToArray<ISticker>()
-                );
-            await destinationChannel
-                .SendMessageAsync($"https://discord.com/channels/{_server}/{msg.Channel.Id}/{msg.Id}");
-        }
+        //if (uniqueUsers.Count < _threshold) return false;
+
+        Console.WriteLine($"Sending.... {msg.Content}");
+        await _forwarder.Forward(_channel, msg.Id, msg.Channel.Id,_server);
 
         return true;
     }
