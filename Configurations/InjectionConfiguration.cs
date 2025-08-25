@@ -31,6 +31,7 @@ public class InjectionConfiguration
             .AddSingleton<LoggingService>()
             .AddSingleton<CommandHandler>()
             .AddSingleton<CachedMessagesRepository>()
+            .AddSingleton<ForwardInterface>()
             .AddSingleton(new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("configuration.json", false, true)
