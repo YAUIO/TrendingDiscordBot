@@ -43,7 +43,7 @@ public class ForwardModule
 
         //Console.WriteLine($"Users: {uniqueUsers.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
 
-        //if (uniqueUsers.Count < _threshold) return false;
+        if (uniqueUsers.Count < _threshold) return false;
 
         Console.WriteLine($"Sending.... {msg.Content}");
         await _forwarder.Forward(_channel, msg.Id, msg.Channel.Id,_server);

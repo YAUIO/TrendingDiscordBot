@@ -27,7 +27,7 @@ public class CachedMessagesRepository
         {
             lock (Messages)
             {
-                Console.WriteLine("Iteration. Cache size: " + Messages.Count);
+                //Console.WriteLine("Iteration. Cache size: " + Messages.Count);
 
                 var toRemove = Messages
                     .Where(msg => DateTimeOffset.Now - msg.Timestamp >= expiration)
