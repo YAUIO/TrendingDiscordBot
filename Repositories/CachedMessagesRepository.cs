@@ -1,4 +1,5 @@
 ﻿using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using TrendingDiscordBot.Modules;
 
 namespace TrendingDiscordBot.Repositories;
@@ -6,18 +7,21 @@ namespace TrendingDiscordBot.Repositories;
 public class CachedMessagesRepository
 {
     private readonly ForwardModule _module;
+    private readonly int _timeout;
 
-    public CachedMessagesRepository(ForwardModule module)
+    public CachedMessagesRepository(ForwardModule module, IConfigurationRoot config)
     {
+        _timeout = Convert.ToInt32(config["Timeout"]);
         _module = module;
         CacheClearer();
+        Console.WriteLine($"Repository initalized with timeout: {_timeout}s");
     }
 
     public List<SocketMessage> Messages { get; } = new();
 
     private async Task CacheClearer()
     {
-        var expiration = TimeSpan.FromMinutes(4);
+        var expiration = TimeSpan.FromSeconds(_timeout);
 
         while (true)
         {
@@ -33,7 +37,7 @@ public class CachedMessagesRepository
             }
 
 
-            Console.WriteLine("Entering check cycle. Cache size: " + Messages.Count);
+            //Console.WriteLine("Entering check cycle. Cache size: " + Messages.Count);
 
             List<SocketMessage> handled = new();
             foreach (var msg in Messages.ToList()) // snapshot to avoid collection modified
