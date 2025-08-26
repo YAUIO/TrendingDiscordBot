@@ -27,6 +27,8 @@ public class ForwardModule
 
         //Console.WriteLine($"Reactions: {msg.Reactions.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
 
+        if (msg.Channel.Id == _channel) return false;
+
         if (msg.Reactions.Count < _threshold) return false;
 
         var uniqueUsers = new HashSet<ulong>();
