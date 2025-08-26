@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using TrendingDiscordBot.Repositories;
 
 namespace TrendingDiscordBot.Services;
@@ -9,12 +10,34 @@ public class CommandHandler(
     DiscordSocketClient client,
     CommandService commands,
     IServiceProvider services,
-    CachedMessagesRepository repository)
+    CachedMessagesRepository repository,
+    IConfigurationRoot config)
 {
+    private readonly ulong _serverid = Convert.ToUInt64(config["ServerID"]);
     public async Task InstallCommandsAsync()
     {
         // Hook the MessageReceived event into our command handler
         client.MessageReceived += HandleCommandAsync;
+        
+        client.Ready += async () =>
+        {
+            foreach (var server in client.Guilds)
+                if (server.Id != _serverid)
+                {
+                    Console.WriteLine($"Guild {server.Name} is not in the allowed list. Leaving....");
+                    await server.LeaveAsync();
+                }
+        };
+
+        client.JoinedGuild += async (guild) =>
+        {
+            foreach (var server in client.Guilds)
+                if (server.Id != _serverid)
+                {
+                    Console.WriteLine($"Guild {server.Name} is not in the allowed list. Leaving....");
+                    await server.LeaveAsync();
+                }
+        };
 
         // Here we discover all the command modules in the entry 
         // assembly and load them. Starting from Discord.NET 2.0, a
