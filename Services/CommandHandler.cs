@@ -17,8 +17,6 @@ public class CommandHandler(
     public async Task InstallCommandsAsync()
     {
         // Hook the MessageReceived event into our command handler
-        client.MessageReceived += HandleCommandAsync;
-        
         client.Ready += async () =>
         {
             foreach (var server in client.Guilds)
@@ -38,6 +36,8 @@ public class CommandHandler(
                     await server.LeaveAsync();
                 }
         };
+        
+        client.MessageReceived += HandleCommandAsync;
 
         // Here we discover all the command modules in the entry 
         // assembly and load them. Starting from Discord.NET 2.0, a
