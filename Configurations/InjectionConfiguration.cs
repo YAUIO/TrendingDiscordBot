@@ -30,6 +30,7 @@ public static class InjectionConfiguration
         var bot = await GetDiscordBot(config, configurationRoot);
 
         var services = new ServiceCollection()
+            .AddLogging()
             .AddSingleton<IConfigurationRoot>(configurationRoot)
             .AddSingleton<DiscordSocketClient>(bot)
             .AddSingleton<ForwardModule>()
