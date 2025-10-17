@@ -1,16 +1,19 @@
 ﻿using System.Reflection;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
-using TrendingDiscordBot.Repositories;
+using Microsoft.Extensions.Logging;
+using TrendingDiscordBot.Modules;
 
 namespace TrendingDiscordBot.Services;
 
 public class CommandHandler(
     DiscordSocketClient client,
     CommandService commands,
+    ForwardModule module,
     IServiceProvider services,
-    CachedMessagesRepository repository,
+    ILogger<CommandHandler> logger,
     IConfigurationRoot config)
 {
     private readonly ulong _serverid = Convert.ToUInt64(config["ServerID"]);
@@ -22,7 +25,7 @@ public class CommandHandler(
             foreach (var server in client.Guilds)
                 if (server.Id != _serverid)
                 {
-                    Console.WriteLine($"Guild {server.Name} is not in the allowed list. Leaving....");
+                    logger.LogInformation("Guild {Name} is not in the allowed list. Leaving....", server.Name);
                     await server.LeaveAsync();
                 }
         };
@@ -32,12 +35,12 @@ public class CommandHandler(
             foreach (var server in client.Guilds)
                 if (server.Id != _serverid)
                 {
-                    Console.WriteLine($"Guild {server.Name} is not in the allowed list. Leaving....");
+                    logger.LogInformation("Guild {Name} is not in the allowed list. Leaving....", server.Name);
                     await server.LeaveAsync();
                 }
         };
-        
-        client.MessageReceived += HandleCommandAsync;
+
+        client.ReactionAdded += HandleReactionAsync;
 
         // Here we discover all the command modules in the entry 
         // assembly and load them. Starting from Discord.NET 2.0, a
@@ -49,25 +52,15 @@ public class CommandHandler(
         // See Dependency Injection guide for more information.
         await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
     }
-
-    private async Task HandleCommandAsync(SocketMessage messageParam)
+    
+    private async Task HandleReactionAsync(Cacheable<IUserMessage, ulong> cacheable, Cacheable<IMessageChannel, ulong> cacheable1, SocketReaction arg3)
     {
-        if (messageParam is not SocketUserMessage message) return;
-
+        var message = await cacheable.GetOrDownloadAsync();
+        
+        if (message is null) return;
+        
         if (message.Author.Id == client.CurrentUser.Id) return;
 
-        var argPos = 0;
-
-        var context = new SocketCommandContext(client, message);
-
-        lock (repository.Messages)
-        {
-            repository.Messages.Add(message);
-        }
-
-        await commands.ExecuteAsync(
-            context,
-            argPos,
-            services);
+        await module.HandleMessage(message);
     }
 }

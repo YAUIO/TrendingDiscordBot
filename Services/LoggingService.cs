@@ -1,28 +1,31 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Logging;
 
 namespace TrendingDiscordBot.Services;
 
 public class LoggingService
 {
-    public LoggingService(DiscordSocketClient client, CommandService command)
+    private readonly ILogger<LoggingService> _logger;
+    
+    public LoggingService(DiscordSocketClient client, CommandService command, ILogger<LoggingService> logger)
     {
         client.Log += LogAsync;
         command.Log += LogAsync;
+        _logger = logger;
     }
 
     private Task LogAsync(LogMessage message)
     {
         if (message.Exception is CommandException cmdException)
         {
-            Console.WriteLine($"[Command/{message.Severity}] {cmdException.Command.Aliases.First()}"
-                              + $" failed to execute in {cmdException.Context.Channel}.");
-            Console.WriteLine(cmdException);
+            _logger.LogError(cmdException, "[Command/{Severity}] {Alias} failed to execute in {Channel}.",
+                message.Severity, cmdException.Command.Aliases[0], cmdException.Context.Channel);
         }
         else
         {
-            Console.WriteLine($"[General/{message.Severity}] {message}");
+            _logger.LogDebug("[General/{Severity}] {Message}", message.Severity, message);
         }
 
         return Task.CompletedTask;

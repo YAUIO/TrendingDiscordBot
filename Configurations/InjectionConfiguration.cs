@@ -4,18 +4,17 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TrendingDiscordBot.Modules;
-using TrendingDiscordBot.Repositories;
 using TrendingDiscordBot.Services;
 
 namespace TrendingDiscordBot.Configurations;
 
-public class InjectionConfiguration
+public static class InjectionConfiguration
 {
     public static async Task<IServiceProvider> CreateProvider()
     {
         var config = new DiscordSocketConfig
         {
-            MessageCacheSize = 100,
+            MessageCacheSize = 400,
             GatewayIntents = GatewayIntents.Guilds
                              | GatewayIntents.GuildMessages
                              | GatewayIntents.GuildMessageReactions
@@ -23,34 +22,31 @@ public class InjectionConfiguration
                              | GatewayIntents.MessageContent
         };
 
-
-        var collection = new ServiceCollection()
-            .AddSingleton(await GetDiscordBot(config))
-            .AddSingleton<ForwardModule>()
-            .AddSingleton<CommandService>()
-            .AddSingleton<LoggingService>()
-            .AddSingleton<CommandHandler>()
-            .AddSingleton<CachedMessagesRepository>()
-            .AddSingleton<ForwardInterface>()
-            .AddSingleton(new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("configuration.json", false, true)
-                .Build()
-            );
-
-        return collection.BuildServiceProvider();
-    }
-
-    private static async Task<DiscordSocketClient> GetDiscordBot(DiscordSocketConfig cfg)
-    {
-        var bot = new DiscordSocketClient(cfg);
-
-        var config = new ConfigurationBuilder()
+        var configurationRoot = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("configuration.json", false, true)
             .Build();
 
-        var token = config["APIKey"];
+        var bot = await GetDiscordBot(config, configurationRoot);
+
+        var services = new ServiceCollection()
+            .AddSingleton<IConfigurationRoot>(configurationRoot)
+            .AddSingleton<DiscordSocketClient>(bot)
+            .AddSingleton<ForwardModule>()
+            .AddSingleton<CommandService>()
+            .AddSingleton<LoggingService>()
+            .AddSingleton<CommandHandler>()
+            .AddSingleton<ForwardInterface>()
+            .BuildServiceProvider();
+
+        return services;
+    }
+
+    private static async Task<DiscordSocketClient> GetDiscordBot(DiscordSocketConfig cfg, IConfigurationRoot configRoot)
+    {
+        var bot = new DiscordSocketClient(cfg);
+
+        var token = configRoot["APIKey"];
 
         await bot.LoginAsync(TokenType.Bot, token);
         await bot.StartAsync();

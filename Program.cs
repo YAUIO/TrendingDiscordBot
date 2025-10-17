@@ -10,7 +10,7 @@ internal class Program
 
     private static async Task Main(string[] args)
     {
-        Console.WriteLine("Version 26.08.2025 03:00");
+        Console.WriteLine("Version 18.10.2025 00:00");
         
         _serviceProvider = await InjectionConfiguration.CreateProvider();
 

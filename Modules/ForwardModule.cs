@@ -1,55 +1,55 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace TrendingDiscordBot.Modules;
 
 public class ForwardModule
 {
     private readonly ulong _channel;
-    private readonly ForwardInterface _forwarder;
     private readonly ulong _server;
     private readonly int _threshold;
+    
+    private readonly ForwardInterface _forwarder;
+    private readonly ILogger<ForwardModule> _logger;
 
-    public ForwardModule(IConfigurationRoot config, ForwardInterface forwarder)
+    public ForwardModule(IConfigurationRoot config, ForwardInterface forwarder, ILogger<ForwardModule> logger)
     {
         _server = Convert.ToUInt64(config["ServerID"]);
         _channel = Convert.ToUInt64(config["ForwardChannelID"]);
         _threshold = Convert.ToInt32(config["Threshold"]);
         _forwarder = forwarder;
+        _logger = logger;
 
-        Console.WriteLine($"ForwardModule initalized with threshold: {_threshold}");
+        _logger.LogInformation("ForwardModule initialized with threshold: {Threshold}", _threshold);
     }
 
-    public async Task<bool> HandleMessage(SocketMessage msg)
+    public async Task HandleMessage(IMessage msg)
     {
-        //Console.WriteLine("Checking message: " + msg.Id + " " + msg.Content + " : " + msg.Reactions.Count);
+        _logger.LogDebug("Checking message: {Id} {Content}: {ReactionCount}", msg.Id, msg.Content, msg.Reactions.Count);
 
-        //Console.WriteLine($"Reactions: {msg.Reactions.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
+        _logger.LogDebug("Reactions: {ReactionCount} for \"{Content}\" by {GlobalName}", msg.Reactions.Count, msg.Content, msg.Author.GlobalName);
 
-        if (msg.Channel.Id == _channel) return false;
+        if (msg.Channel.Id == _channel) return;
 
-        if (msg.Reactions.Count < _threshold) return false;
+        if (msg.Reactions.Count < _threshold) return;
 
         var uniqueUsers = new HashSet<ulong>();
 
-        foreach (var reaction in msg.Reactions)
+        foreach (var emoji in msg.Reactions.Select(r => r.Key))
         {
-            var emoji = reaction.Key;
-
             var users = await msg.GetReactionUsersAsync(emoji, int.MaxValue).FlattenAsync();
 
             foreach (var user in users)
                 uniqueUsers.Add(user.Id);
         }
 
-        //Console.WriteLine($"Users: {uniqueUsers.Count} for \"{msg.Content}\" by {msg.Author.GlobalName}");
+        _logger.LogDebug("Users: {UserCount} for \"{MsgContent}\" by {GlobalName}", uniqueUsers.Count, msg.Content, msg.Author.GlobalName);
 
-        if (uniqueUsers.Count < _threshold) return false;
+        if (uniqueUsers.Count < _threshold) return;
 
-        Console.WriteLine($"Sending.... {msg.Content}");
+        _logger.LogDebug("Sending.... {Content}", msg.Content);
         await _forwarder.Forward(_channel, msg.Id, msg.Channel.Id,_server);
-
-        return true;
     }
 }
