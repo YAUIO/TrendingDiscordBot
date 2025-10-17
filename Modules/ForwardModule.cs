@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -25,15 +24,15 @@ public class ForwardModule
         _logger.LogInformation("ForwardModule initialized with threshold: {Threshold}", _threshold);
     }
 
-    public async Task HandleMessage(IMessage msg)
+    public async Task<bool> HandleMessage(IMessage msg)
     {
         _logger.LogDebug("Checking message: {Id} {Content}: {ReactionCount}", msg.Id, msg.Content, msg.Reactions.Count);
 
+        if (msg.Channel.Id == _channel) return false;
+        
         _logger.LogDebug("Reactions: {ReactionCount} for \"{Content}\" by {GlobalName}", msg.Reactions.Count, msg.Content, msg.Author.GlobalName);
 
-        if (msg.Channel.Id == _channel) return;
-
-        if (msg.Reactions.Count < _threshold) return;
+        if (msg.Reactions.Count < _threshold) return false;
 
         var uniqueUsers = new HashSet<ulong>();
 
@@ -47,9 +46,11 @@ public class ForwardModule
 
         _logger.LogDebug("Users: {UserCount} for \"{MsgContent}\" by {GlobalName}", uniqueUsers.Count, msg.Content, msg.Author.GlobalName);
 
-        if (uniqueUsers.Count < _threshold) return;
+        if (uniqueUsers.Count < _threshold) return false;
 
         _logger.LogDebug("Sending.... {Content}", msg.Content);
         await _forwarder.Forward(_channel, msg.Id, msg.Channel.Id,_server);
+
+        return true;
     }
 }

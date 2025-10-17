@@ -2,8 +2,9 @@
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using TrendingDiscordBot.Configurations;
 using TrendingDiscordBot.Modules;
 
 namespace TrendingDiscordBot.Services;
@@ -14,16 +15,16 @@ public class CommandHandler(
     ForwardModule module,
     IServiceProvider services,
     ILogger<CommandHandler> logger,
-    IConfigurationRoot config)
+    IMemoryCache cache,
+    MemoryCacheEntryOptions options)
 {
-    private readonly ulong _serverid = Convert.ToUInt64(config["ServerID"]);
     public async Task InstallCommandsAsync()
     {
         // Hook the MessageReceived event into our command handler
         client.Ready += async () =>
         {
             foreach (var server in client.Guilds)
-                if (server.Id != _serverid)
+                if (server.Id != InjectionConfiguration.ServerId)
                 {
                     logger.LogInformation("Guild {Name} is not in the allowed list. Leaving....", server.Name);
                     await server.LeaveAsync();
@@ -33,12 +34,14 @@ public class CommandHandler(
         client.JoinedGuild += async (guild) =>
         {
             foreach (var server in client.Guilds)
-                if (server.Id != _serverid)
+                if (server.Id != InjectionConfiguration.ServerId)
                 {
                     logger.LogInformation("Guild {Name} is not in the allowed list. Leaving....", server.Name);
                     await server.LeaveAsync();
                 }
         };
+
+        client.MessageReceived += HandleMessageAsync;
 
         client.ReactionAdded += HandleReactionAsync;
 
@@ -52,6 +55,13 @@ public class CommandHandler(
         // See Dependency Injection guide for more information.
         await commands.AddModulesAsync(Assembly.GetEntryAssembly(), services);
     }
+
+    private async Task HandleMessageAsync(SocketMessage socketMessage)
+    {
+        logger.LogDebug("Message received: {Message}", socketMessage.Content);
+
+        cache.Set(socketMessage.Id, await module.HandleMessage(socketMessage), options);
+    }
     
     private async Task HandleReactionAsync(Cacheable<IUserMessage, ulong> cacheable, Cacheable<IMessageChannel, ulong> cacheable1, SocketReaction arg3)
     {
@@ -61,6 +71,14 @@ public class CommandHandler(
         
         if (message.Author.Id == client.CurrentUser.Id) return;
 
-        await module.HandleMessage(message);
+        if (!cache.TryGetValue(message.Id, out bool isHandled) || isHandled)
+        {
+            if (isHandled) cache.Remove(message.Id);
+            return;
+        }
+        
+        logger.LogDebug("Cache value for {Id} is {Value}", message.Id, isHandled);
+
+        cache.Set(message.Id, await module.HandleMessage(message));
     }
 }
