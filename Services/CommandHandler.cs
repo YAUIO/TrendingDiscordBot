@@ -79,6 +79,6 @@ public class CommandHandler(
         
         logger.LogDebug("Cache value for {Id} is {Value}", message.Id, isHandled);
 
-        cache.Set(message.Id, await module.HandleMessage(message));
+        cache.Set(message.Id, await module.HandleMessage(message), options);
     }
 }
