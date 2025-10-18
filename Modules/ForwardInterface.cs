@@ -5,14 +5,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace TrendingDiscordBot.Modules;
 
-public class ForwardInterface
+public class ForwardInterface(IConfigurationRoot config)
 {
-    private readonly string? _botToken;
-
-    public ForwardInterface(IConfigurationRoot config)
-    {
-        _botToken = config["APIKey"];
-    }
+    private readonly string? _botToken = config["APIKey"];
 
     public async Task Forward(ulong targetChannelId, ulong originalMessageId, ulong originalChannelId,
         ulong originalGuildId)
